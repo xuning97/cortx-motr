@@ -337,7 +337,7 @@ static void test_pv2fd_conv(void)
 #ifndef __KERNEL__
 	char                *confstr = NULL;
 #endif
-	uint32_t             failure_level;
+	uint32_t             failure_level = 0;
 	uint64_t             max_failures = 1;
 	int                  i;
 	int                  rc;
@@ -373,7 +373,7 @@ static void test_pv2fd_conv(void)
 	for (i = 0; i < M0_CONF_PVER_HEIGHT; ++i)
 		if (pv->pv_u.subtree.pvs_tolerance[i] != 0) {
 			max_failures = pv->pv_u.subtree.pvs_tolerance[i];
-			failure_level     = i;
+			failure_level = i;
 			break;
 		}
 	/*

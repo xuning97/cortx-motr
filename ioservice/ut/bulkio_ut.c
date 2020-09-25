@@ -1650,8 +1650,7 @@ static void fop_create_populate(int index, enum M0_RPC_OPCODES op, int buf_nr)
 	rw->crw_pver = CONF_PVER_FID;
 	bp->bp_offsets[0] = IO_SEG_START_OFFSET;
 
-	void add_buffer_bulk(int j)
-	{
+	for (j = 0; j < buf_nr; ++j) {
 		/*
 		 * Adds a m0_rpc_bulk_buf structure to list of such structures
 		 * in m0_rpc_bulk.
@@ -1677,9 +1676,6 @@ static void fop_create_populate(int index, enum M0_RPC_OPCODES op, int buf_nr)
 			M0_NET_QT_PASSIVE_BULK_SEND :
 			M0_NET_QT_PASSIVE_BULK_RECV;
 	}
-
-	for (j = 0; j < buf_nr; ++j)
-		add_buffer_bulk(j);
 
 	/*
 	 * Allocates memory for array of net buf descriptors and array of

@@ -118,9 +118,10 @@ AC_MSG_RESULT([$host_os])
 
 AS_CASE([$host_os],
         # supported operating systems:
-        [linux*], [],
+        [linux*], [use_linux=yes],
+        [darwin*], [use_darwin=yes],
         # default action for unsupported OS is to abort with error
-        [AC_MSG_ERROR([Unsupported platform detected!])]
+        [AC_MSG_ERROR([Unsupported platform $host_os detected!])]
 )
 
 #
@@ -168,6 +169,9 @@ AH_TEMPLATE([HAVE_MALLINFO],          [Have mallinfo() function])
 AH_TEMPLATE([HAVE_MALLOC_SIZE],       [Have malloc_size() function])
 AH_TEMPLATE([HAVE_BACKTRACE],         [Have backtrace(3) function])
 AH_TEMPLATE([HAVE_SYSTEMD],           [Have systemd available])
+AH_TEMPLATE([M0_DARWIN],              [Build for macos])
+AH_TEMPLATE([M0_LINUX],               [Build for linux])
+AH_TEMPLATE([M0_PLATFORM],            [Build platform])
 
 # enable/disable options ------------------------------ {{{2
 
@@ -195,6 +199,29 @@ AC_ARG_ENABLE([release],
 
 AS_IF([test x$enable_dev_mode = xyes],
       AC_DEFINE([ENABLE_DEV_MODE]))
+
+# linux
+AS_IF([test x$use_linux = xyes],
+      [AC_DEFINE([M0_LINUX])
+       AC_DEFINE([M0_PLATFORM], ["linux"])
+       AM_CONDITIONAL([ON_LINUX], [true])
+       AM_CONDITIONAL([ON_DARWIN], [false])
+       AM_CONDITIONAL([HAVE_SYSTEMD], [false])
+       AM_CONDITIONAL([MOTR_IDX_STORE_CASS], [false])
+])
+
+# macos
+AS_IF([test x$use_darwin = xyes],
+      [with_lustre=no;
+       enable_castxml=yes;
+       export PATH="/usr/local/opt/grep/libexec/gnubin:$PATH"
+       AC_DEFINE([M0_DARWIN])
+       AC_DEFINE([M0_PLATFORM], ["darwin"])
+       AM_CONDITIONAL([ON_LINUX], [false])
+       AM_CONDITIONAL([ON_DARWIN], [true])
+       AM_CONDITIONAL([HAVE_SYSTEMD], [false])
+       AM_CONDITIONAL([MOTR_IDX_STORE_CASS], [false])
+])
 
 # debug {{{3
 AC_ARG_ENABLE([debug],
@@ -569,10 +596,10 @@ AS_IF([test -z $POD2MAN],
 
 AC_CHECK_PROG(DOXYGEN, doxygen, doxygen, doxygen)
 
-AC_CHECK_PROG(A2X, a2x, a2x)
-AS_IF([test -z $A2X],
-      AC_MSG_ERROR([a2x is not found please install asciidoc])
-)
+#AC_CHECK_PROG(A2X, a2x, a2x)
+#AS_IF([test -z $A2X],
+#      AC_MSG_ERROR([a2x is not found please install asciidoc])
+#)
 
 # BASH variable is already set by configure to /bin/sh, so we need to unset it
 # first to prevent AC_CHECK_PROG from using cached value
@@ -602,11 +629,11 @@ MOTR_SEARCH_LIBS([pthread_create], [c pthread], [PTHREAD_LIBS],
 )
 AC_SUBST([PTHREAD_LIBS])
 
+AS_IF([test x$use_linux = xyes],
 # check for aio library (io_submit(3) & co.)
-MOTR_SEARCH_LIBS([io_getevents], [aio c], [AIO_LIBS],
-        [io_getevents cannot be found! Try to install libaio-devel.]
-)
-AC_SUBST([AIO_LIBS])
+      [MOTR_SEARCH_LIBS([io_getevents], [aio c], [AIO_LIBS],
+        [io_getevents cannot be found! Try to install libaio-devel.])
+       AC_SUBST([AIO_LIBS])
 
 # check for libedit library
 MOTR_SEARCH_LIBS([readline], [c edit], [LIBEDIT_LIBS],
@@ -615,7 +642,7 @@ MOTR_SEARCH_LIBS([readline], [c edit], [LIBEDIT_LIBS],
 AC_SUBST([LIBEDIT_LIBS])
 
 # rt library is required for: aio_read(3), aio_write(3), timer_create(2)
-MOTR_SEARCH_LIBS([aio_read], [rt aio c], [RT_LIBS],
+       MOTR_SEARCH_LIBS([aio_read], [rt aio c], [RT_LIBS],
         [aio_read cannot be found! Try to install librt-devel or libaio-devel.]
 )
 AC_SUBST([RT_LIBS])
@@ -628,7 +655,7 @@ AC_SUBST([DL_LIBS])
 MOTR_SEARCH_LIBS([uuid_generate], [uuid c], [UUID_LIBS],
 	[uuid_generate cannot be found! Try to install libuuid and libuuid-devel.])
 AC_SUBST([UUID_LIBS])
-
+])
 
 #
 # Checking for required header files
@@ -699,11 +726,13 @@ AC_CHECK_DECL([mallinfo], [AC_DEFINE([HAVE_MALLINFO])], [], [[#include <malloc.h
 AC_CHECK_DECL([malloc_size], [AC_DEFINE([HAVE_MALLOC_SIZE])], [], [[#include <malloc/malloc.h>]])
 AC_CHECK_DECL([backtrace], [AC_DEFINE([HAVE_BACKTRACE])], [], [[#include <execinfo.h>]])
 
+AS_IF([test x$use_linux = xyes],
+
 #
 # Checking systemd availability ------------------------------------------- {{{1
 #
 
-AS_IF([test x$enable_systemd = xyes],
+    AS_IF([test x$enable_systemd = xyes],
       [
          AC_CHECK_HEADERS([systemd/sd-daemon.h], [],
                           [AC_MSG_ERROR([systemd/sd-daemon.h cannot be found! please, install systemd-devel package])])
@@ -814,21 +843,6 @@ OLD_CFLAGS=$CFLAGS
 LIBS=""
 CFLAGS=""
 
-# Checking galois --------------------------------------------------------- {{{1
-
-GALOIS_REL_PATH="extra-libs/galois"
-GALOIS_SRC="$SRCDIR/$GALOIS_REL_PATH"
-GALOIS_ABS_SRC="$ABS_SRCDIR/$GALOIS_REL_PATH"
-GALOIS_INCLUDES="-I$GALOIS_ABS_SRC/include"
-KGALOIS_INCLUDES="-I$GALOIS_ABS_SRC/include"
-GALOIS_LIBS="$GALOIS_ABS_SRC/src/libgalois.la"
-
-AC_SUBST([GALOIS_SYMVERS], [$GALOIS_ABS_SRC/src/linux_kernel/Module.symvers])
-
-AS_IF([! test -x $GALOIS_SRC/configure],
-      [ test -x $GALOIS_SRC/autogen.sh && ( cd $GALOIS_SRC; ./autogen.sh ) ]
-)
-
 # Checking libyaml -------------------------------------------------------- {{{1
 
 AS_IF([test x$enable_system_libs = xyes],
@@ -849,9 +863,27 @@ AS_IF([test x$enable_system_libs = xyes],
 LIBS=$OLD_LIBS
 CFLAGS=$OLD_CFLAGS
 
+AC_SUBST([YAML_LIBS])
+
+) # end of AS_IF([test x$use_linux = xyes])
+
+# Checking galois --------------------------------------------------------- {{{1
+
+GALOIS_REL_PATH="extra-libs/galois"
+GALOIS_SRC="$SRCDIR/$GALOIS_REL_PATH"
+GALOIS_ABS_SRC="$ABS_SRCDIR/$GALOIS_REL_PATH"
+GALOIS_INCLUDES="-I$GALOIS_ABS_SRC/include"
+KGALOIS_INCLUDES="-I$GALOIS_ABS_SRC/include"
+GALOIS_LIBS="$GALOIS_ABS_SRC/src/libgalois.la"
+
+AC_SUBST([GALOIS_SYMVERS], [$GALOIS_ABS_SRC/src/linux_kernel/Module.symvers])
+
+AS_IF([! test -x $GALOIS_SRC/configure],
+      [ test -x $GALOIS_SRC/autogen.sh && ( cd $GALOIS_SRC; ./autogen.sh ) ]
+)
+
 AC_SUBST([GALOIS_ABS_SRC])
 AC_SUBST([GALOIS_LIBS])
-AC_SUBST([YAML_LIBS])
 
 #
 # Handle configuration options -------------------------------------------- {{{1
@@ -912,9 +944,13 @@ M0_CPPFLAGS="-D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL='' -DM0_EXTERN=extern \
              -iquote'$ABS_BUILDDIR' -iquote'$SRCDIR' -include'config.h' \
              -DM0_SRC_DIR='$ABS_SRCDIR' $M0_CPPFLAGS"
 
+#
+# No grep -P on macos
+#
+AS_IF([test x$use_darwin != xyes],
 # contains only -D and -I/usr* entries from M0_CPPFLAGS, this is intended for
 # pkg-config database provided within Motr rpm distribution
-M0_CPPFLAGS_DIST=$(echo "$M0_CPPFLAGS" | grep -Po -e '-D\S+|-I/usr\S+' | xargs echo)
+M0_CPPFLAGS_DIST=$(echo "$M0_CPPFLAGS" | grep -Po -e '-D\S+|-I/usr\S+' | xargs echo))
 
 # -Wno-attributes is required to suppress warnings about unrecognized
 # __attribute__, such as __attribute__((gccxml(...))). It's important because we

@@ -19,6 +19,7 @@
  *
  */
 
+#if defined(M0_LINUX)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1150,6 +1151,9 @@ M0_INTERNAL m0_processor_nr_t m0_processor_id_get(void)
 }
 
 #undef M0_TRACE_SUBSYSTEM
+
+/* M0_LINUX */
+#endif
 
 /** @} end of processor group */
 
