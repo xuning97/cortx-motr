@@ -658,7 +658,6 @@ int main(int argc, char **argv)
 	if (g_params.hp_mode == HM_LISTEN) {
 		ham_say("Listening at %s", g_params.hp_ep_local);
 		m0_semaphore_down(&g_sem);
-		M0_ASSERT(m0_semaphore_value(&g_sem) == 0);
 	} else {
 		ham_send(&ha, hl, g_msg);
 	}
@@ -666,7 +665,6 @@ int main(int argc, char **argv)
 	    !ha_msg_is_one_way(g_msg)) {
 		ham_say("Awaiting reply");
 		m0_semaphore_down(&g_sem);
-		M0_ASSERT(m0_semaphore_value(&g_sem) == 0);
 	}
 	ham_say("Finishing");
 	m0_ha_flush(&ha, hl);

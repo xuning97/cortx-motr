@@ -540,7 +540,7 @@ AS_IF([test x$enable_castxml = xyes],
 )
 
 # gccxml is required by xcode/m0gccxml2xcode script
-AC_PATH_PROG(CXXXML, $cxxxml_name,, [/usr/bin$PATH_SEPARATOR$PATH])
+AC_PATH_PROG(CXXXML, $cxxxml_name,,)
 AS_IF([test -z $CXXXML],
       AC_MSG_ERROR([$cxxxml_name is not found: it can be installed from gccxml \
 package on Red Hat based systems])
