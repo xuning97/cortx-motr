@@ -215,6 +215,7 @@ AS_IF([test x$use_darwin = xyes],
       [with_lustre=no;
        enable_castxml=yes;
        export PATH="/usr/local/opt/grep/libexec/gnubin:$PATH"
+       export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
        AC_DEFINE([M0_DARWIN])
        AC_DEFINE([M0_PLATFORM], ["darwin"])
        AM_CONDITIONAL([ON_LINUX], [false])
@@ -835,6 +836,8 @@ AS_IF([test x$with_lustre = xno],
         AC_SUBST([LUSTRE_SYMVERS])
       ]) # --without-lustre, with_lustre=no
 
+) # end of AS_IF([test x$use_linux = xyes])
+
 #
 # Configure and build dependencies in external motr repositories ---------- {{{1
 #
@@ -865,8 +868,6 @@ LIBS=$OLD_LIBS
 CFLAGS=$OLD_CFLAGS
 
 AC_SUBST([YAML_LIBS])
-
-) # end of AS_IF([test x$use_linux = xyes])
 
 # Checking galois --------------------------------------------------------- {{{1
 
