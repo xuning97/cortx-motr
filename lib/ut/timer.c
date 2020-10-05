@@ -170,7 +170,9 @@ static void test_timers(enum m0_timer_type timer_type, int nr_timers,
 
 static unsigned long locality_default_callback(unsigned long data)
 {
+#if !defined(M0_DARWIN) /* No hard timers on Darwin. */
 	M0_UT_ASSERT(m0_tid() == loc_default_tid);
+#endif
 	m0_semaphore_up(&loc_default_lock);
 	return 0;
 }
@@ -202,7 +204,9 @@ static void timer_locality_default_test()
 static unsigned long locality_test_callback(unsigned long data)
 {
 	M0_ASSERT(data >= 0);
+#if !defined(M0_DARWIN) /* No hard timers on Darwin. */
 	M0_ASSERT(test_locality_tid == m0_tid());
+#endif
 	m0_semaphore_up(&test_locality_lock[data]);
 	return 0;
 }
@@ -271,6 +275,7 @@ free_timers:
 static unsigned long test_timer_callback_mt(unsigned long data)
 {
 	struct tg_timer *tgt = (struct tg_timer *)data;
+#if !defined(M0_DARWIN) /* No hard timers on Darwin. */
 	bool		 found = false;
 	pid_t		 tid = m0_tid();
 	int		 i;
@@ -283,6 +288,7 @@ static unsigned long test_timer_callback_mt(unsigned long data)
 			break;
 		}
 	M0_ASSERT(found);
+#endif
 	/* callback is done */
 	m0_semaphore_up(&tgt->tgt_done);
 	return 0;
