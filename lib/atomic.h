@@ -29,15 +29,28 @@
 #include "lib/types.h"
 
 #ifdef __KERNEL__
-#  include "lib/linux_kernel/atomic64.h"
+#    include "lib/linux_kernel/atomic64.h"
 #else
-#  ifdef ENABLE_SYNC_ATOMIC
-#    include "lib/user_space/__sync_atomic.h"
-#  else
-#    include "lib/user_space/user_x86_64_atomic.h"
-#  endif
+#    if defined(M0_DARWIN)
+#        define ATOMIC_USE_X86_64 (0)
+#        define ATOMIC_USE___SYNC (0)
+#        define ATOMIC_USE_C11    (1)
+#    endif
+#    if defined(M0_LINUX)
+#        define ATOMIC_USE_X86_64 (1)
+#        define ATOMIC_USE___SYNC (0)
+#        define ATOMIC_USE_C11    (0)
+#    endif
+#    if ATOMIC_USE_C11
+#        include "lib/user_space/c11_atomic.h"
+#    endif
+#    if ATOMIC_USE___SYNC
+#        include "lib/user_space/__sync_atomic.h"
+#    endif
+#    if ATOMIC_USE_X86_64
+#        include "lib/user_space/user_x86_64_atomic.h"
+#    endif
 #endif
-
 /**
    @defgroup atomic
 
