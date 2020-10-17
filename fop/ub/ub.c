@@ -427,6 +427,7 @@ static int _init(const char *opts M0_UNUSED)
 	rc = M0_REQH_INIT(&g_reqh,
 			  .rhia_dtm       = (void *)1,
 			  .rhia_db        = NULL,
+			  .rhia_fid       = (void *)1,
 			  .rhia_mdstore   = (void *)1);
 	M0_UB_ASSERT(rc == 0);
 	m0_reqh_start(&g_reqh);
