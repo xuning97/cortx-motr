@@ -414,6 +414,7 @@ static int _init(const char *opts M0_UNUSED)
 {
 	size_t i;
 	int    rc;
+	static struct m0_fid fid = M0_FID_TINIT('r', 1, 1);
 
 	rc = m0_reqh_service_type_register(&ub_fom_stype);
 	M0_UB_ASSERT(rc == 0);
@@ -427,7 +428,7 @@ static int _init(const char *opts M0_UNUSED)
 	rc = M0_REQH_INIT(&g_reqh,
 			  .rhia_dtm       = (void *)1,
 			  .rhia_db        = NULL,
-			  .rhia_fid       = (void *)1,
+			  .rhia_fid       = &fid,
 			  .rhia_mdstore   = (void *)1);
 	M0_UB_ASSERT(rc == 0);
 	m0_reqh_start(&g_reqh);
