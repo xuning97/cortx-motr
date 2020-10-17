@@ -26,7 +26,10 @@
  */
 #include <linux/uaccess.h> /* probe_kernel_address */
 
-M0_INTERNAL bool m0_arch_addr_is_sane(const uint64_t * addr)
+#include "lib/misc.h"
+
+M0_INTERNAL ATTRIBUTE_NO_SANITIZE_ADDRESS bool
+m0_arch_addr_is_sane(const uint64_t * addr)
 {
 	uint64_t dummy;
 
