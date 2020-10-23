@@ -368,7 +368,7 @@ M0_INTERNAL int m0_rm_reverse_session_get(struct m0_rm_remote_incoming *rem_in,
 		remote->rem_session =
 			m0_rpc_service_reverse_session_lookup(service, item);
 		if (remote->rem_session == NULL) {
-			remote->rem_rev_sess_clink.cl_is_oneshot = true;
+			remote->rem_rev_sess_clink.cl_flags = M0_CF_ONESHOT;
 			rc = m0_rpc_service_reverse_session_get(
 				service, item, &remote->rem_rev_sess_clink,
 				&remote->rem_session);
