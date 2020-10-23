@@ -25,13 +25,6 @@
 #include "motr/client.h"
 #include "motr/client_internal.h"
 
-/*
- * Including the c files so we can replace the M0_PRE asserts
- * in order to test them.
- */
-#include "motr/client.c"
-#include "motr/client_init.c"
-
 #include "lib/ub.h"
 #include "lib/errno.h"    /* ETIMEDOUT */
 #include "lib/timer.h"    /* m0_timer_init */
@@ -272,6 +265,7 @@ M0_INTERNAL int ut_m0_client_init(struct m0_client **instance)
 	struct m0_pool         *mdpool;
 	struct m0_pool_version *pv;
 	struct m0_pool_version *mdpv;
+	struct m0_pools_common *pc;
 
 	m0_fi_enable_once("initlift_move_next_floor", "immediate_ret");
 	rc = INIT(instance);
@@ -281,6 +275,7 @@ M0_INTERNAL int ut_m0_client_init(struct m0_client **instance)
 		sm = &(*instance)->m0c_initlift_sm;
 		(*instance)->m0c_initlift_direction = STARTUP;
 
+		pc = &(*instance)->m0c_pools_common;
 		for (i = IL_UNINITIALISED + 1;
 		     i <= IL_RPC;
 		     //i <= IL_AST_THREAD;
@@ -295,14 +290,15 @@ M0_INTERNAL int ut_m0_client_init(struct m0_client **instance)
 		M0_UT_ASSERT(pool != NULL);
 		M0_SET0(&id);
 		m0_pool_init(pool, &id, 0);
-		pools_tlist_init(&(*instance)->m0c_pools_common.pc_pools);
-		pools_tlink_init_at_tail(pool, &((*instance)->m0c_pools_common.pc_pools));
+		m0_mutex_init(&pc->pc_mutex);
+		pools_tlist_init(&pc->pc_pools);
+		pools_tlink_init_at_tail(pool, &pc->pc_pools);
 
 		M0_ALLOC_PTR(mdpool);
 		M0_UT_ASSERT(mdpool != NULL);
 		id.f_key=1;
 		m0_pool_init(mdpool, &id, 0);
-		pools_tlink_init_at_tail(mdpool, &((*instance)->m0c_pools_common.pc_pools));
+		pools_tlink_init_at_tail(mdpool, &pc->pc_pools);
 
 		M0_ALLOC_PTR(pv);
 		M0_UT_ASSERT(pv != NULL);
@@ -318,7 +314,7 @@ M0_INTERNAL int ut_m0_client_init(struct m0_client **instance)
 		M0_SET0(mdpv);
 		mdpv->pv_pool = mdpool;
 		pool_version_tlink_init_at_tail(mdpv, &mdpool->po_vers);
-		(*instance)->m0c_pools_common.pc_md_pool = mdpool;
+		pc->pc_md_pool = mdpool;
 
 		(*instance)->m0c_process_fid = M0_FID_TINIT(M0_CONF__PROCESS_FT_ID, 0, 1);
 	}
